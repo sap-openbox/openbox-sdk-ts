@@ -7,6 +7,33 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-10-28
+
+### Added
+
+- OpenRouter routing provenance. After a governed `fetch` to `openrouter.ai`
+  completes inside an activity, the SDK sends an `llm_provenance` span carrying
+  the generation id, upstream provider, served model, cost, token usage, finish
+  reason and requested-vs-honored routing (`gen_ai.*`, `openbox.routing.*`,
+  `openbox.model.*`). It looks up OpenRouter's generation record within a
+  fixed 12-second budget (`LOOKUP_BUDGET_MS`, counted from the end of the
+  model call) and otherwise sends the provenance in the completion response
+  itself; a rejected lookup (401/403/5xx) is logged with its status. Attribute
+  names match the Python base SDK and the OpenRouter TypeScript SDK. Disable
+  with `OPENBOX_OPENROUTER_PROVENANCE=false`.
+- `HookType.LLM_PROVENANCE`, and `drainOpenRouterProvenance()` plus the record
+  helpers exported from `@openbox-ai/openbox-sdk-ts/instrumentation`.
+
+### Changed
+
+- `OpenBoxClient.evaluate` waits for the closing session's own pending
+  provenance lookups before sending `WorkflowCompleted` / `WorkflowFailed`
+  (bounded by `DRAIN_TIMEOUT_MS`), since Core drops spans that arrive after the
+  session closes. Other sessions' lookups are not waited on. Lookup timers are
+  unref'd, so they never keep the process alive; await
+  `drainOpenRouterProvenance()` before exiting a process that does not close
+  its sessions.
+
 ## [2.1.0] - 2026-10-01
 
 ### Fixed

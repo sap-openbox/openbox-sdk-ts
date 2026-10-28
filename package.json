@@ -1,6 +1,6 @@
 {
   "name": "@openbox-ai/openbox-sdk-ts",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "OpenBox TypeScript base SDK — shared governance, signing, and instrumentation behavior for Node/TS framework SDKs",
   "license": "MIT",
   "author": "OpenBox Team",
