@@ -70,6 +70,7 @@ import type {
 // of recursing into evaluating its own evaluate/approval/auth-validate calls.
 // `recursion-guard.ts` is a dependency-free leaf (only `node:async_hooks`),
 // so this import cannot create a cycle back through `runtime`/`instrumentation`.
+import { drainOpenRouterProvenance } from "../instrumentation/openrouter-provenance.js";
 import { runAsInternal } from "../instrumentation/recursion-guard.js";
 import {
   assertPrivateKeyMatchesDocument,
@@ -245,6 +246,26 @@ function isV3ContractError(response: Response): boolean {
  */
 function redirectPolicy(prepared: PreparedRequest): { redirect?: "manual" } {
   return prepared.contractVersion === 3 ? { redirect: "manual" } : {};
+}
+
+const SESSION_CLOSING_EVENTS = new Set(["WorkflowCompleted", "WorkflowFailed"]);
+
+/**
+ * Let this session's in-flight OpenRouter provenance reach Core before the
+ * session closes. The last model call's lookup finishes after the workflow
+ * returns, and Core does not record spans that arrive after the closing event.
+ * Only the closing session's lookups are awaited, bounded by the lookup budget.
+ */
+async function drainProvenanceBeforeClose(payload: JsonValue): Promise<void> {
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return;
+  const eventType = payload["event_type"];
+  if (typeof eventType !== "string" || !SESSION_CLOSING_EVENTS.has(eventType)) return;
+  const workflowId = payload["workflow_id"];
+  const runId = payload["run_id"];
+  await drainOpenRouterProvenance({
+    workflowId: typeof workflowId === "string" ? workflowId : null,
+    runId: typeof runId === "string" ? runId : null
+  });
 }
 
 export interface ClientLogger {
@@ -689,6 +710,7 @@ export class OpenBoxClient {
    * a contract error that throws under every outage policy.
    */
   async evaluate(payload: JsonValue): Promise<EvaluationResult> {
+    await drainProvenanceBeforeClose(payload);
     const prepared = await this.prepared("evaluate", payload);
     let response: Response;
     try {

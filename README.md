@@ -262,6 +262,34 @@ See [`docs/instrumentation-coverage.md`](docs/instrumentation-coverage.md) for
 exactly what each target blocks vs. passes through unblocked (the `redis` and
 `mongodb` gaps in particular).
 
+### OpenRouter routing provenance
+
+With the instrumentation installed, a governed `fetch` to `openrouter.ai` made
+inside an activity also reports which upstream provider served it. After the
+response arrives, the SDK sends Core an `llm_provenance` span carrying
+`gen_ai.generation.id`, the upstream provider and served model, cost and token
+usage, finish reason, and whether the requested model and `provider.only`
+routing were honoured (`gen_ai.*`, `openbox.routing.*`, `openbox.model.*`). The
+dashboard's Provenance tab, shown for agents whose workflow engine is OpenRouter,
+aggregates these spans. Attribute names match the Python base SDK.
+
+- The lookup runs after the answer, off its critical path, and reuses the call's
+  own `Authorization` header — no extra key is needed.
+- OpenRouter's generation record (data region, latency, fallback attempts) is
+  published late, so it is tried within a 12-second budget (`LOOKUP_BUDGET_MS`);
+  when it is not ready, the provenance in the completion response itself is
+  sent. A lookup rejected by OpenRouter (401/403/5xx) is logged with its status.
+- `OpenBoxClient.evaluate` waits for the closing session's own pending lookups
+  before `WorkflowCompleted` / `WorkflowFailed`, because Core does not record
+  spans that arrive after the session closes. A lookup never keeps the process
+  alive on its own; await `drainOpenRouterProvenance()` (from
+  `@openbox-ai/openbox-sdk-ts/instrumentation`) before exiting a process that
+  does not close its sessions.
+- Framework SDKs with their own hook pipeline can call
+  `scheduleOpenRouterProvenance({ session, send, ... })` instead of relying on
+  the built-in `fetch` patch.
+- Set `OPENBOX_OPENROUTER_PROVENANCE=false` to turn it off.
+
 ## Public exports
 
 The package root is intentionally **import-light**: it re-exports only pure

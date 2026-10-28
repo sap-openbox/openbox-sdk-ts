@@ -32,7 +32,9 @@ export const HookType = {
   FILE_OPERATION: "file_operation",
   FUNCTION_CALL: "function_call",
   // Reserved; disabled until provider hooks are implemented.
-  LLM_CALL: "llm_call"
+  LLM_CALL: "llm_call",
+  /** OpenRouter routing provenance — who served a model call (instrumentation/openrouter-provenance.ts). */
+  LLM_PROVENANCE: "llm_provenance"
 } as const;
 
 export type HookType = (typeof HookType)[keyof typeof HookType];

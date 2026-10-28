@@ -31,6 +31,7 @@ import {
   mintTraceId,
   nowEpochNs
 } from "./http-governance-shared.js";
+import { scheduleOpenRouterProvenance } from "./openrouter-provenance.js";
 import { isInternalCall, isSameOrigin } from "./recursion-guard.js";
 
 /** Exported for direct unit testing of the best-effort failure path — not part of the package's public surface (this module is never re-exported from the package root). */
@@ -179,6 +180,20 @@ export function installFetchHttpGovernancePatch(
           responseBody
         })
       ]
+    });
+
+    // Routing provenance for OpenRouter calls: runs after the answer, off its
+    // critical path, inside this activity's scope. No-op for any other host.
+    scheduleOpenRouterProvenance({
+      runtime,
+      logger,
+      fetchImpl: originalFetch,
+      url,
+      authorization: request.headers.get("authorization"),
+      requestBody,
+      responseBody,
+      traceId,
+      parentSpanId: spanId
     });
 
     return response;

@@ -15,9 +15,9 @@ describe("Stage", () => {
 });
 
 describe("HookType", () => {
-  it("has exactly the 5 operation categories", () => {
+  it("has exactly the 6 operation categories", () => {
     expect(new Set(Object.values(HookType))).toStrictEqual(
-      new Set(["http_request", "db_query", "file_operation", "function_call", "llm_call"])
+      new Set(["http_request", "db_query", "file_operation", "function_call", "llm_call", "llm_provenance"])
     );
   });
 });

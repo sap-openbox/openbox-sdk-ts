@@ -83,6 +83,23 @@ import { installRedisCommandWrapper, type RedisCommandWrapperHandle } from "./re
 
 export { traced, type TracedOptions } from "./function-wrapper-traced.js";
 export { isInternalCall, isSameOrigin, runAsInternal } from "./recursion-guard.js";
+export {
+  DRAIN_TIMEOUT_MS,
+  LOOKUP_BUDGET_MS,
+  drainOpenRouterProvenance,
+  extractGenerationId,
+  extractRequestedRouting,
+  isModelHonored,
+  isRoutingHonored,
+  normalizeGenerationRecord,
+  provenanceAttributes,
+  recordFromResponse,
+  scheduleOpenRouterProvenance,
+  type ProviderAttempt,
+  type ScheduleOpenRouterProvenanceOptions,
+  type RequestedRouting,
+  type RoutingProvenance
+} from "./openrouter-provenance.js";
 
 /** Tier A2/B database drivers this controller can govern — see `options.databases` (explicit opt-in, OQ5). */
 export type DatabaseDriverName = "pg" | "redis" | "mysql2" | "mongodb";
