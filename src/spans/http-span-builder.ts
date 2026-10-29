@@ -22,6 +22,7 @@
  */
 
 import { HookType, SEMANTIC_FIELDS_BY_HOOK_TYPE, type SpanRecord } from "../contracts/otel-spans.js";
+import type { JsonValue } from "../contracts/results.js";
 import { applyRedaction } from "../serialization/index.js";
 
 /**
@@ -47,6 +48,14 @@ export function redactHttpHeaders(
   if (headers === null || headers === undefined) return null;
   const [redacted] = applyRedaction(headers, DEFAULT_SENSITIVE_HTTP_HEADERS);
   return redacted as Record<string, string>;
+}
+
+/**
+ * OTel-native request attributes, matching the ones openbox-sdk-python sets on
+ * its HTTP spans. Without them Core stores the span with empty attributes.
+ */
+function httpAttributes(method: string, url: string): Record<string, JsonValue> {
+  return { "http.request.method": method, "url.full": url };
 }
 
 function deriveHttpError(
@@ -86,6 +95,7 @@ export function buildStartedHttpSpan(input: BuildStartedHttpSpanInput): SpanReco
     http_url: input.url,
     request_headers: redactHttpHeaders(input.requestHeaders),
     request_body: input.requestBody ?? null,
+    attributes: httpAttributes(input.method, input.url),
     attribute_key_identifiers: [...SEMANTIC_FIELDS_BY_HOOK_TYPE[HookType.HTTP_REQUEST]!]
   };
 }
@@ -126,6 +136,7 @@ export function buildCompletedHttpSpan(input: BuildCompletedHttpSpanInput): Span
     response_headers: redactHttpHeaders(input.responseHeaders),
     response_body: input.responseBody ?? null,
     error: deriveHttpError(input.error, input.statusCode),
+    attributes: httpAttributes(input.method, input.url),
     attribute_key_identifiers: [...SEMANTIC_FIELDS_BY_HOOK_TYPE[HookType.HTTP_REQUEST]!]
   };
 }

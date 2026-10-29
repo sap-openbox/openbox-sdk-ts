@@ -34,6 +34,13 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   `drainOpenRouterProvenance()` before exiting a process that does not close
   its sessions.
 
+### Fixed
+
+- `http_request` spans carry the `http.request.method` and `url.full` OTel
+  attributes, as the Python base SDK's do. They were sent with empty
+  attributes, so the dashboard showed none on HTTP spans, including the span of
+  a blocked call.
+
 ## [2.1.0] - 2026-10-01
 
 ### Fixed

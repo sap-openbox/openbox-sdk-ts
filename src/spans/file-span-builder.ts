@@ -11,10 +11,10 @@
  * File identity is mirrored in BOTH the flat Core root fields (`file_path`/
  * `file_mode`/`file_operation`) AND the OTel-native `attributes` sub-object
  * (`file.path`/`file.mode`/`file.operation`). Core and sibling SDKs read the
- * root fields; downstream OTel-style consumers read `attributes`. This is the
- * one hook family that populates `attributes` at build time — http/function
- * spans leave it for `toCoreSpanData` to default to `{}` — because file
- * governance has no OTel span source to hydrate it from later.
+ * root fields; downstream OTel-style consumers read `attributes`. File and
+ * http spans populate `attributes` at build time (function spans leave it for
+ * `toCoreSpanData` to default to `{}`) because neither has an OTel span source
+ * to hydrate it from later.
  */
 
 import type { JsonValue } from "../contracts/results.js";

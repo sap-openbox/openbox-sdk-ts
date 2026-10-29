@@ -49,6 +49,15 @@ describe("buildStartedHttpSpan", () => {
     expect(span["attribute_key_identifiers"]).toStrictEqual(["http_method", "http_url"]);
   });
 
+  it("carries the request method and full URL as OTel attributes, as the Python SDK does", () => {
+    const span = buildStartedHttpSpan({ ...IDENTITY, method: "POST", url: "https://x.test/v1", startTimeNs: 1 });
+    expect(span["attributes"]).toStrictEqual({ "http.request.method": "POST", "url.full": "https://x.test/v1" });
+    expect(toCoreSpanData(span).wireSpan["attributes"]).toStrictEqual({
+      "http.request.method": "POST",
+      "url.full": "https://x.test/v1"
+    });
+  });
+
   it("null request fields when absent (never a forced empty object/string)", () => {
     const span = buildStartedHttpSpan({ ...IDENTITY, method: "GET", url: "https://x.test", startTimeNs: 1 });
     expect(span["request_headers"]).toBeNull();
@@ -69,6 +78,7 @@ describe("buildCompletedHttpSpan", () => {
       responseHeaders: { "content-type": "text/plain" },
       responseBody: "ok"
     });
+    expect(span["attributes"]).toStrictEqual({ "http.request.method": "GET", "url.full": "https://example.com/x" });
     expect(span["stage"]).toBe("completed");
     expect(span["end_time"]).toBe(1_500);
     expect(span["duration_ns"]).toBe(500);
